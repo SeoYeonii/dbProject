@@ -1,0 +1,216 @@
+-- 2019-11-25 CREATE TMP_KEYWORD
+-- 2019-11-25 UPDATE DELETE/UPDATE CASCADE
+-- CLASSES Table Create SQL
+CREATE TABLE CLASSES
+(
+    `class_id`   INT(11)         NOT NULL    AUTO_INCREMENT, 
+    `name`       VARCHAR(255)    NOT NULL, 
+    `capacity`   INT(11)         NOT NULL, 
+    `master_id`  INT(11)         NOT NULL, 
+    PRIMARY KEY (class_id)
+);
+
+ALTER TABLE CLASSES COMMENT '과목 목록 테이블';
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE LECTURES
+(
+    `lecture_id`  INT(11)         NOT NULL    AUTO_INCREMENT, 
+    `name`        VARCHAR(255)    NOT NULL, 
+    `start_time`  DATETIME        NOT NULL, 
+    `end_time`    DATETIME        NOT NULL, 
+    `class_id`    INT(11)         NOT NULL, 
+    PRIMARY KEY (lecture_id)
+);
+
+ALTER TABLE LECTURES COMMENT '강의 목록 테이블';
+
+ALTER TABLE LECTURES
+    ADD CONSTRAINT FK_LECTURES_class_id_CLASSES_class_id FOREIGN KEY (class_id)
+        REFERENCES CLASSES (class_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE USERS
+(
+    `user_id`   INT(11)         NOT NULL    AUTO_INCREMENT COMMENT '로그인 시 사용하는 이메일이 아닌, 1, 2, 3 이런 식으로 단순 증가하는 대체 키', 
+    `email`     VARCHAR(255)    NOT NULL    COMMENT '로그인 시 사용하는 이메일 주소', 
+    `password`  VARCHAR(255)    NOT NULL    COMMENT '로그인 시 사용하는 비밀번호 (암호화하지 않아도 무방)', 
+    `type`      INT(11)         NOT NULL    COMMENT '0 : 학생 / 1 : 강사', 
+    PRIMARY KEY (user_id)
+);
+
+ALTER TABLE USERS COMMENT '유저 목록 테이블';
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE QUESTIONS
+(
+    `question_id`      INT(11)          NOT NULL    AUTO_INCREMENT, 
+    `type`             INT(11)          NOT NULL    COMMENT '0 : 단답형 / 1 : 객관식', 
+    `question`         VARCHAR(1023)    NOT NULL, 
+    `bogi`             TEXT             NOT NULL    COMMENT '별도의 구분자를 넣어 사용해도 되고, attribute를 여러 개로 나눠도 됨', 
+    `answer`           TEXT             NOT NULL, 
+    `difficulty`       INT(4)           NOT NULL    COMMENT '타입 임의로 지정', 
+    `real_difficulty`  INT(4)           NULL        COMMENT '타입 임의로 지정', 
+    `lecture_id`       INT(11)          NOT NULL, 
+    PRIMARY KEY (question_id)
+);
+
+ALTER TABLE QUESTIONS COMMENT '강의 아이템 - 문항 테이블';
+
+ALTER TABLE QUESTIONS
+    ADD CONSTRAINT FK_QUESTIONS_lecture_id_LECTURES_lecture_id FOREIGN KEY (lecture_id)
+        REFERENCES LECTURES (lecture_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE USER_CLASSES
+(
+    `role`      VARCHAR(255)    NOT NULL    COMMENT 'student / teacher', 
+    `class_id`  INT(11)         NOT NULL, 
+    `user_id`   INT(11)         NOT NULL, 
+    PRIMARY KEY (class_id, user_id)
+);
+
+ALTER TABLE USER_CLASSES COMMENT '과목-유저 매핑 테이블';
+
+ALTER TABLE USER_CLASSES
+    ADD CONSTRAINT FK_USER_CLASSES_class_id_CLASSES_class_id FOREIGN KEY (class_id)
+        REFERENCES CLASSES (class_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE USER_CLASSES
+    ADD CONSTRAINT FK_USER_CLASSES_user_id_USERS_user_id FOREIGN KEY (user_id)
+        REFERENCES USERS (user_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE LECTURE_KEYWORDS
+(
+    `class_id`    INT(11)         NOT NULL, 
+    `lecture_id`  INT(11)         NOT NULL, 
+    `keyword`     VARCHAR(255)    NOT NULL, 
+    `weight`      FLOAT           NOT NULL, 
+    PRIMARY KEY (class_id, lecture_id, keyword)
+);
+
+ALTER TABLE LECTURE_KEYWORDS COMMENT '강의 키워드 테이블';
+
+ALTER TABLE LECTURE_KEYWORDS
+    ADD CONSTRAINT FK_LECTURE_KEYWORDS_class_id_CLASSES_class_id FOREIGN KEY (class_id)
+        REFERENCES CLASSES (class_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE LECTURE_KEYWORDS
+    ADD CONSTRAINT FK_LECTURE_KEYWORDS_lecture_id_LECTURES_lecture_id FOREIGN KEY (lecture_id)
+        REFERENCES LECTURES (lecture_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE QUESTION_KEYWORDS
+(
+    `question_id`    INT(11)         NOT NULL, 
+    `keyword`        VARCHAR(255)    NOT NULL, 
+    `lecture_id`     INT(11)         NOT NULL, 
+    `score_portion`  INT(11)         NOT NULL, 
+    PRIMARY KEY (question_id, lecture_id)
+);
+
+ALTER TABLE QUESTION_KEYWORDS COMMENT '문항 키워드 테이블';
+
+ALTER TABLE QUESTION_KEYWORDS
+    ADD CONSTRAINT FK_QUESTION_KEYWORDS_question_id_QUESTIONS_question_id FOREIGN KEY (question_id)
+        REFERENCES QUESTIONS (question_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE QUESTION_KEYWORDS
+    ADD CONSTRAINT FK_QUESTION_KEYWORDS_lecture_id_LECTURES_lecture_id FOREIGN KEY (lecture_id)
+        REFERENCES LECTURES (lecture_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE STUDENT_ANSWER_LOG
+(
+    `student_id`   INT(11)          NOT NULL, 
+    `question_id`  INT(11)          NOT NULL, 
+    `submit_time`  DATETIME         NOT NULL    COMMENT '제출 시간, 가장 마지막에 제출한 것이 최종 답안', 
+    `answer`       VARCHAR(1023)    NULL, 
+    PRIMARY KEY (student_id, question_id)
+);
+
+ALTER TABLE STUDENT_ANSWER_LOG COMMENT '학생이 제출한 답안';
+
+ALTER TABLE STUDENT_ANSWER_LOG
+    ADD CONSTRAINT FK_STUDENT_ANSWER_LOG_student_id_USERS_user_id FOREIGN KEY (student_id)
+        REFERENCES USERS (user_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE STUDENT_ANSWER_LOG
+    ADD CONSTRAINT FK_STUDENT_ANSWER_LOG_question_id_QUESTIONS_question_id FOREIGN KEY (question_id)
+        REFERENCES QUESTIONS (question_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE QUESTIONS_PR
+(
+    `question_id`  INT(11)    NOT NULL, 
+    `pr1`          DOUBLE     NOT NULL    COMMENT '얘가 null이면 존재 이유가 없음', 
+    `pr2`          DOUBLE     NULL, 
+    `pr3`          DOUBLE     NULL, 
+    `pr4`          DOUBLE     NULL, 
+    `pr5`          DOUBLE     NULL, 
+    PRIMARY KEY (question_id)
+);
+
+ALTER TABLE QUESTIONS_PR COMMENT '문제 parameter들';
+
+ALTER TABLE QUESTIONS_PR
+    ADD CONSTRAINT FK_QUESTIONS_PR_question_id_QUESTIONS_question_id FOREIGN KEY (question_id)
+        REFERENCES QUESTIONS (question_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE STUDENT_CLASS
+(
+    `user_id`   INT(11)    NOT NULL, 
+    `class_id`  INT(11)    NOT NULL, 
+    PRIMARY KEY (user_id, class_id)
+);
+
+ALTER TABLE STUDENT_CLASS COMMENT '학생들이 어떤 수업 듣는지 나타내는 table';
+
+ALTER TABLE STUDENT_CLASS
+    ADD CONSTRAINT FK_STUDENT_CLASS_user_id_USERS_user_id FOREIGN KEY (user_id)
+        REFERENCES USERS (user_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE STUDENT_CLASS
+    ADD CONSTRAINT FK_STUDENT_CLASS_class_id_CLASSES_class_id FOREIGN KEY (class_id)
+        REFERENCES CLASSES (class_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- CLASSES Table Create SQL
+CREATE TABLE QUESTIONS_BANK
+(
+    `question_id`      INT(11)          NOT NULL    AUTO_INCREMENT, 
+    `type`             INT(11)          NOT NULL    COMMENT '0 : 단답형 / 1 : 객관식', 
+    `question`         VARCHAR(1023)    NOT NULL, 
+    `bogi`             TEXT             NOT NULL    COMMENT '별도의 구분자를 넣어 사용해도 되고, attribute를 여러 개로 나눠도 됨', 
+    `answer`           TEXT             NOT NULL, 
+    `difficulty`       INT(4)           NOT NULL    COMMENT '타입 임의로 지정', 
+    `real_difficulty`  INT(4)           NULL        COMMENT '타입 임의로 지정', 
+    `lecture_id`       INT(11)          NOT NULL, 
+    PRIMARY KEY (question_id)
+);
+
+ALTER TABLE QUESTIONS_BANK COMMENT '문제 은행/ 문항 테이블과 구분되는 별도의 테이블';
+
+ALTER TABLE QUESTIONS_BANK
+    ADD CONSTRAINT FK_QUESTIONS_BANK_lecture_id_LECTURES_lecture_id FOREIGN KEY (lecture_id)
+        REFERENCES LECTURES (lecture_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- TMP_KEYWORD Table Create SQL
+CREATE TABLE TMP_KEYWORD
+(
+    `id`      INT(11)          NOT NULL    AUTO_INCREMENT,      
+    `keyword`      INT(11)          NOT NULL, 
+    `weight`      INT(11)          NOT NULL, 
+    PRIMARY KEY (id)
+);
